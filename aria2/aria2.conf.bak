@@ -1,0 +1,9 @@
+auto-file-renaming=false
+check-certificate=false
+console-log-level=warn
+file-allocation=none
+max-concurrent-downloads=1
+max-connection-per-server=4
+max-overall-download-limit=0
+min-split-size=1048576
+split=4

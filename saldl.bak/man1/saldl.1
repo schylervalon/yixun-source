@@ -1,0 +1,875 @@
+'\" t
+.\"     Title: saldl
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 02/02/2017
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "SALDL" "1" "02/02/2017" "\ \&" "\ \&"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+saldl \- A lightweight well\-featured CLI downloader optimized for speed and early preview\&.
+.SH "SYNOPSIS"
+.sp
+\fBsaldl\fR [OPTIONS] \fIURL\fR
+.SH "DESCRIPTION"
+.sp
+\fBsaldl\fR is a CLI downloader based on libcurl\&.
+.sp
+By default, it splits a download into fixed\-sized chunks and download them in\-order with multiple concurrent connections\&.
+.sp
+Many OPTIONS are available to change the default behavior\&.
+.SH "FILES AND DIRS"
+.PP
+\fI<filename>\&.part\&.sal\fR
+.RS 4
+The incomplete/partial file that will eventually be renamed to
+\fI<filename>\fR\&.
+.RE
+.PP
+\fI<filename>\&.ctrl\&.sal\fR
+.RS 4
+This file contains the minimal information required about the download progress to allow resuming\&.
+.RE
+.PP
+\fI<filename>\&.tmp\&.sal/\fR
+.RS 4
+By default,
+\fBsaldl\fR
+uses temporary files to store chunks before they are merged\&. Those files are created in this dir\&.
+.RE
+.SH "CHUNK PROGRESS STATES"
+.PP
+\fB4\fR
+.RS 4
+Chunk already merged in
+\fI<filename>\&.part\&.sal\fR
+.RE
+.PP
+\fB3\fR
+.RS 4
+Chunk downloaded, but still not merged\&.
+
+
+This state should be transient\&. If it\(cqs not, your system probably has load problems (CPU/IO/memory)\&.
+.RE
+.PP
+\fB2\fR
+.RS 4
+Chunk download is in progress\&.
+.RE
+.PP
+\fB1\fR
+.RS 4
+Chunk is queued for download\&.
+
+
+This is a transient state you shouldn\(cqt see\&. Unless you have serious load/congestion problems in your system\&.
+.RE
+.PP
+\fB0\fR
+.RS 4
+Chunk still not queued for download\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+When resuming from a previous session, an incomplete chunk would initially have state \fI0\fR\&. That doesn\(cqt mean it will be emptied and downloaded from scratch\&. Sub\-chunk resume will work as expected\&.
+.sp .5v
+.RE
+.SH "OPTIONS"
+.SS "General"
+.PP
+\fB\-d, \-\-dry\-run\fR
+.RS 4
+Do not download, only display information\&.
+.RE
+.PP
+\fB\-\-mirror\-url\fR
+.RS 4
+If the mirror is valid, Assign half the connections to it\&.
+.PP
+A mirror URL is considered valid when compared to URL if:
+.RS 4
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+Both do not have the same effective URL\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Both have the same content size\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Both support ranges\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+Both are not FTP\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+Both are not using content encoding\&. Or both do, but we will not decode/decompress\&.
+.RE
+.RE
+.RE
+.PP
+\fB\-\-fatal\-if\-invalid\-mirror\fR
+.RS 4
+Fatally fail if the mirror is invalid\&. Only a warning is displayed by default\&.
+.RE
+.PP
+\fB\-\-stdout\fR
+.RS 4
+Write/Pipe output to
+\fBstdout\fR\&.
+.PP
+Everything else will behave in the same way except:
+.RS 4
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+The pseudo output filename "STDOUT" will be used\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Chunks will only be merged (written to stdout) in order\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Resume is disabled\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+No state is saved in a
+\fI<filename>\&.ctrl\&.sal\fR
+file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+If single mode is used, timeouts and other non\-fatal response errors will become fatal\&.
+.RE
+.RE
+.RE
+.PP
+.RS 4
+If
+\fB\-m/\-\-memory\-buffers\fR
+are used, saldl will not create or write to any files directly\&.
+.RE
+.PP
+\fB\-m, \-\-memory\-buffers\fR
+.RS 4
+Use memory buffers instead of temp files for downloading chunks\&.
+
+This mode increases memory overhead\&. And we lose sub\-chunk resumability\&. But it might help performance in some situations, especially when IO is the bottleneck\&.
+.RE
+.PP
+\fB\-\-read\-only\fR
+.RS 4
+Don\(cqt create files or write anything to disk\&. This should be only used to test network performance\&.
+.RE
+.PP
+\fB\-\-no\-mmap\fR (default mode only)
+.RS 4
+Read chunk files into buffers instead of using mmap()\&.
+
+This option hurts performance and should only be used for debugging\&.
+.RE
+.SS "UI Options"
+.PP
+\fB\-i \fR\fB\fIinterval\fR\fR\fB, \-\-status\-refresh\-interval=\fR\fB\fIinterval\fR\fR
+.RS 4
+Minimum refresh interval between status updates in seconds\&. Increasing the default should help if terminal emulation is slow\&. (\fBdefault\fR:
+\fI0\&.3\fR)
+.RE
+.PP
+\fB\-C, \-\-no\-color\fR
+.RS 4
+Disable colors in output\&.
+
+
+Pass it twice (\fB\-CC\fR) to disable all other formattings and escape codes (auto\-set if not tty)\&.
+.RE
+.PP
+\fB\-V , \-\-verbosity\fR
+.RS 4
+Increase verbosity level\&.
+
+(See
+\fBVerbosity Levels\fR
+for details\&.)
+.RE
+.PP
+\fB\-\-verbose\-libcurl\fR
+.RS 4
+Enable libcurl\(cqs verbose output\&. Regardless of verbosity level\&.
+.RE
+.PP
+\fB\-\-no\-status\fR
+.RS 4
+Disable progress status output\&. (For debugging purposes only)
+.RE
+.SS "Resume Options"
+.PP
+\fB\-r, \-\-resume\fR
+.RS 4
+resume download\&.
+
+(requires a
+\fI<filename>\&.ctrl\&.sal\fR
+to exist with a matching filesize)
+.RE
+.PP
+\fB\-f, \-\-force\fR
+.RS 4
+If not resuming, and
+\fI<filename>\&.part\&.sal\fR
+exists, truncate the file and start over\&.
+.RE
+.SS "Chunk sizes and connections"
+.PP
+\fB\-S, \-\-single\fR
+.RS 4
+a single chunk single connection mode (wget\-like)\&.
+.RE
+.PP
+\fB\-s \fR\fB\fIsize\fR\fR\fB, \-\-chunk\-size=\fR\fB\fIsize\fR\fR
+.RS 4
+Set size for chunks in bytes\&.
+\fBA unit suffix\fR
+can be used\&. (\fBdefault\fR:
+\fI1m\fR)
+.RE
+.PP
+\fB\-c \fR\fB\fInum\fR\fR\fB, \-\-connections=\fR\fB\fInum\fR\fR
+.RS 4
+number of concurrent connections\&. (\fBdefault\fR:
+\fI6\fR)
+.RE
+.PP
+\fB\-l \fR\fB\fInum\fR\fR\fB, \-\-last\-chunks\-first=\fR\fB\fInum\fR\fR
+.RS 4
+the number of last chunks that should be downloaded first\&. (\fBdefault\fR:
+\fI0\fR)
+.RE
+.PP
+\fB\-L \fR\fB\fIsize\fR\fR\fB, \-\-last\-size\-first=\fR\fB\fIsize\fR\fR
+.RS 4
+The minimum size that should be downloaded first at the end of the file\&.
+\fBA unit suffix\fR
+can be used\&.
+
+This should be useful when chunk\-size is not known beforehand\&. e\&.g\&. when
+\fB\-a/\-\-auto\-size\fR
+is used\&.
+
+This option overrides
+\fB\-l/\-\-last\-chunks\-first\fR\&. (\fBdefault\fR:
+\fI0\fR)
+.RE
+.PP
+\fB\-F, \-\-allow\-ftp\-segments\fR
+.RS 4
+Due to a certain limitation in the information provided by libcurl, single mode is force\-enabled by default with FTP links\&. This option overrides that behavior\&.
+.RE
+.PP
+\fB\-\-random\-order\fR
+.RS 4
+Download chunks in random order\&.
+.RE
+.PP
+\fB\-\-merge\-in\-order\fR
+.RS 4
+Only merge chunks in\-order\&.
+
+
+This works as if we were piping to the output file, which could be useful with some storage devices\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+It does not make sense to use
+\fB\-\-merge\-in\-order\fR
+with
+\fB\-\-last\-chunks\-first\fR
+or
+\fB\-\-last\-size\-first\fR\&. As merging those chunks will be delayed\&. Even if they were downloaded early\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+If memory buffers
+\fB\-\-merge\-in\-order\fR
+are both used, completely downloaded chunks could be lost due to delayed merges if the download was interrupted\&.
+.RE
+.sp .5v
+.RE
+.PP
+\fB\-a \fR\fB\fInum\fR\fR\fB, \-\-auto\-size=\fR\fB\fInum\fR\fR
+.RS 4
+increase chunk size so that chunk progress can fit in
+\fInum\fR
+lines\&.
+.RE
+.PP
+\fB\-w, \-\-whole\-file\fR
+.RS 4
+work like typical download accelerators (no\&. of chunks = no\&. of connections)\&.
+.RE
+.SS "Filename Options"
+.PP
+\fB\-o \fR\fB\fIfilename\fR\fR\fB, \-\-output\-filename=\fR\fB\fIfilename\fR\fR
+.RS 4
+Use this filename instead of the detected name\&.
+.RE
+.PP
+\fB\-n, \-\-no\-path\fR
+.RS 4
+assume path is relative, replace
+\fI/\fR
+and
+\fI:\fR
+with
+\fI_\fR\&.
+.RE
+.PP
+\fB\-D \fR\fB\fIdirname\fR\fR\fB, \-\-root\-dir=\fR\fB\fIdirname\fR\fR
+.RS 4
+Prepend filename with this path\&.
+.RE
+.PP
+\fB\-g, \-\-filename\-from\-redirect\fR
+.RS 4
+Get filename from redirected URL instead of the original URL\&.
+.RE
+.PP
+\fB\-G, \-\-keep\-GET\-attrs\fR
+.RS 4
+keep GET attributes at the end of a filename\&. (This option has no effect if
+\fB\-o\fR/\fB\-\-output\-filename\fR
+is used)
+.RE
+.PP
+\fB\-A, \-\-no\-attachment\-detection\fR
+.RS 4
+Do not use Content\-Disposition attachment filename if present\&.
+.RE
+.PP
+\fB\-t, \-\-auto\-trunc\fR
+.RS 4
+truncate filename if name or path is too long\&.
+.RE
+.PP
+\fB\-T, \-\-smart\-trunc\fR
+.RS 4
+same as
+\fB\-t/\-\-auto\-trunc\fR
+but tries to keep the file extension\&. (overrides
+\fB\-t\fR/\fB\-\-auto\-trunc\fR)
+.RE
+.SS "Network Options"
+.PP
+\fB\-6, \-\-resolve\-ipv6\fR
+.RS 4
+Only resolve to IPv6 addresses\&.
+.RE
+.PP
+\fB\-4, \-\-resolve\-ipv4\fR
+.RS 4
+Only resolve to IPv4 addresses\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+If both \fB\-6\fR and \fB\-4\fR are passed, what\(cqs passed last will take precedence\&.
+.sp .5v
+.RE
+.PP
+\fB\-R \fR\fB\fIbandwidth\fR\fR\fB, \-\-connection\-max\-rate=\fR\fB\fIbandwidth\fR\fR
+.RS 4
+maximum rate per connection in bytes/s\&.
+\fBA unit suffix\fR
+can be used\&. (\fBdefault\fR:
+\fI0\fR
+[unlimited])
+.RE
+.PP
+\fB\-O, \-\-no\-timeouts\fR
+.RS 4
+disable all timeouts\&.
+.RE
+.PP
+\fB\-x \fR\fB\fIproxy\fR\fR\fB, \-\-proxy=\fR\fB\fIproxy\fR\fR
+.RS 4
+set proxy\&.
+.RE
+.PP
+\fB\-X \fR\fB\fIproxy\fR\fR\fB, \-\-tunnel\-proxy=\fR\fB\fIproxy\fR\fR
+.RS 4
+similar to \-\-proxy but tunneling all traffic through it\&.
+.RE
+.PP
+\fB\-N, \-\-no\-proxy\fR
+.RS 4
+disable all proxies even if set in the environment\&.
+.RE
+.PP
+\fB\-\-skip\-TLS\-verification\fR
+.RS 4
+Skip TLS/SSL verification\&. Use at your own risk\&.
+.RE
+.SS "Custom Request Options"
+.PP
+\fB\-E, \-\-auto\-referer\fR
+.RS 4
+auto set referer in case of a redirect\&.
+.RE
+.PP
+\fB\-e \fR\fB\fIreferer\fR\fR\fB, \-\-referer=\fR\fB\fIreferer\fR\fR
+.RS 4
+set referer\&.
+.RE
+.PP
+\fB\-M \fR\fB\fIlocal\-file\fR\fR\fB, \-\-since\-file\-mtime=\fR\fB\fIlocal\-file\fR\fR
+.RS 4
+Sets the
+\fIIf\-Modified\-Since\fR
+header with the last modification time of the passed local file\&.
+
+This option has no effect if
+\fB\-I\fR/\fB\-\-no\-remote\-info\fR
+was passed\&.
+.RE
+.PP
+\fB\-Y \fR\fB\fIdate\-expression\fR\fR\fB, \-\-date\-cond=\fR\fB\fIdate\-expression\fR\fR
+.RS 4
+Sets
+\fIIf\-Modified\-Since\fR
+header according to the date expression passed\&. Consult
+\fBcurl_getdate(3)\fR
+for details\&.
+
+If the expression starts with
+\fI\*(Aq\-\*(Aq\fR, then
+\fIIf\-Unmodified\-Since\fR
+is set\&.
+
+This option overrides
+\fB\-M\fR/\fB\-\-since\-file\-mtime\fR\&.
+
+This option has no effect if
+\fB\-I\fR/\fB\-\-no\-remote\-info\fR
+was passed\&.
+.RE
+.PP
+\fB\-z, \-\-compress\fR
+.RS 4
+Request a compressed response\&. Single mode would be forced if the server supports compression\&. Unless
+\fB\-Z\fR/\fB\-\-no\-decompress\fR
+was passed\&.
+.RE
+.PP
+\fB\-Z, \-\-no\-decompress\fR
+.RS 4
+Disable decompression, whether compression was requested or forced by the server\&.
+.RE
+.PP
+\fB\-K \fR\fB\fIcookie\-file\fR\fR\fB, \-\-cookie\-file=\fR\fB\fIcookie\-file\fR\fR
+.RS 4
+File to read cookies from \&.
+.RE
+.PP
+\fB\-k \fR\fB\fIcookies\fR\fR\fB, \-\-inline\-cookies=\fR\fB\fIcookies\fR\fR
+.RS 4
+Set cookies\&.
+.RE
+.PP
+\fB\-p \fR\fB\fIpost\-data\fR\fR\fB, \-\-post=\fR\fB\fIpost\-data\fR\fR
+.RS 4
+Send
+\fIpost\-data\fR
+in a simple POST request (no multipart)\&.
+.RE
+.PP
+\fB\-P \fR\fB\fIraw\-post\-data\fR\fR\fB, \-\-raw\-post=\fR\fB\fIraw\-post\-data\fR\fR
+.RS 4
+Send
+\fIraw\-post\-data\fR
+as\-is including headers (supports multipart)\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+\fB\-\-post\fR and \fB\-\-raw\-post\fR will double\-post by default\&. Unless \fB\-I\fR/\fB\-\-no\-remote\-info\fR is also passed\&.
+.sp .5v
+.RE
+.PP
+\fB\-U, \-\-no\-user\-agent\fR
+.RS 4
+Don\(cqt set user agent (disables default agent)\&.
+.RE
+.PP
+\fB\-u \fR\fB\fIagent\fR\fR\fB, \-\-user\-agent=\fR\fB\fIagent\fR\fR
+.RS 4
+set user agent\&.
+.RE
+.sp
+The following settings should not be generally used, but might help in rare cases:
+.PP
+\fB\-H, \-\-custom\-headers=\fR\fB\fIheader(s)\fR\fR
+.RS 4
+Add one or more custom headers to the request\&. Or suppress an auto one\&. Those headers would be sent to the remote server\&. If you need to send them to the proxy, use
+\fB\-\-proxy\-custom\-headers\fR\&.
+
+
+This option can be passed multiple times\&.
+
+If only one header is passed\&. It must not end with
+\fI\er\en\fR\&. libcurl will add this for us\&. Multiple headers must be separated by
+\fI\er\en\fR\&. And the last on must also not end with an
+\fI\er\en\fR\&.
+.PP
+\fBThree Header formats are acceptable:\fR
+.RS 4
+.PP
+1\- Header with info
+.RS 4
+\fIName: info\fR
+.RE
+.PP
+2\- Header without info
+.RS 4
+\fIName;\fR
+.RE
+.PP
+3\- Suppress default header
+.RS 4
+\fIName:\fR
+.RE
+.RE
+.RE
+.PP
+\fB\-\-proxy\-custom\-headers=\fR\fB\fIheader(s)\fR\fR
+.RS 4
+Works like
+\fB\-\-custom\-headers\fR\&. But the headers are passed to the proxy instead of the remote server\&.
+.RE
+.PP
+\fB\-\-use\-HEAD\fR
+.RS 4
+Use
+\fIHEAD\fR
+instead of
+\fIGET\fR
+to retrieve download information from servers\&.
+.RE
+.PP
+\fB\-I, \-\-no\-remote\-info\fR
+.RS 4
+Just
+\fIGET\fR\&. Don\(cqt do anything else\&. (\fB\-S\fR/\fB\-\-signle\fR
+is forced,
+\fB\-r\fR/\fB\-\-resume\fR
+is disabled)
+.RE
+.PP
+\fB\-\-no\-http2\fR
+.RS 4
+Don\(cqt try HTTP/2 requests\&.
+.RE
+.PP
+\fB\-\-http2\-upgrade\fR
+.RS 4
+Try HTTP/2 requests with plain HTTP\&.
+
+This option only has effect if saldl was built with and running (libcurl >= 7\&.47\&.0)\&. Otherwise, HTTP/2 would be default for both HTTP and HTTPS\&.
+.RE
+.PP
+\fB\-\-no\-tcp\-keep\-alive\fR
+.RS 4
+Don\(cqt send TCP keep\-alive probes\&.
+.RE
+.PP
+\fB\-\-assume\-range\-support\fR
+.RS 4
+Don\(cqt use this\&. The wrong data will probably be downloaded\&.
+.RE
+.SH "ENVIRONMENT"
+.sp
+In addition to all environment variables affecting \fBlibcurl(3)\fR\&. The following variable(s) can affect \fBsaldl\fR:
+.PP
+\fBSALDL_EXTRA_ARGS\fR
+.RS 4
+Append these arguments to argv\&.
+.RE
+.SH "UNIT SUFFIXES"
+.sp
+OPTIONS that take an argument representing a byte value can be suffixed with one of the following letters:
+.PP
+.RS 4
+.PP
+\fBK\fR or \fBk\fR
+.RS 4
+multiply size by 1024 (KiB)\&.
+.RE
+.PP
+\fBM\fR or \fBm\fR
+.RS 4
+multiply size by 1024*1024 (MiB)\&.
+.RE
+.PP
+\fBG\fR or \fBg\fR
+.RS 4
+multiply size by 1024*1024*1024 (GiB)\&.
+.RE
+.RE
+.SH "VERBOSITY LEVELS"
+.sp
+\fBsaldl\fR only shows essential information with the default verbosity level\&. You can pass \fB\-V\fR/\fB\-\-verbosity\fR multiple times to increase verbosity\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+Verbosity levels are incremental\&. Each level includes all messages from lower levels\&.
+.sp .5v
+.RE
+.PP
+\fB\-V\fR
+.RS 4
+Show non\-fatal errors\&.
+.RE
+.PP
+\fB\-VV\fR
+.RS 4
+Show warnings\&.
+.RE
+.PP
+\fB\-VVV\fR
+.RS 4
+Show informational messages\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+The following levels are noisy\&. They should only be used for debugging/tracing purposes\&.
+.sp .5v
+.RE
+.PP
+\fB\-VVVV\fR
+.RS 4
+Show debug messages\&.
+.RE
+.PP
+\fB\-VVVVV\fR
+.RS 4
+Enable verbose output in libcurl\&.
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+This can be enabled independently with the \fB\-\-verbose\-libcurl\fR option\&.
+.sp .5v
+.RE
+.PP
+\fB\-VVVVVV\fR
+.RS 4
+Show debug messages from event loops\&.
+.RE
+.SH "EXIT STATUS"
+.PP
+\fB0\fR
+.RS 4
+Success\&.
+.RE
+.PP
+\fB1\fR
+.RS 4
+A
+\fIfatal\fR
+error happened\&. A helpful message should explain the error\&.
+.RE
+.SH "WWW"
+.sp
+https://saldl\&.github\&.io
+.SH "BUGS"
+.sp
+https://github\&.com/saldl/saldl/issues
+.SH "AUTHOR"
+.sp
+Mohammad AlSaleh (MoSal@Github)\&.
+.SH "COPYING"
+.sp
+Copyright (C) 2014\-2015 Mohammad AlSaleh\&. Free use of this software is granted under the terms of the GNU Affero General Public License (AGPL)\&.
